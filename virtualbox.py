@@ -1,14 +1,53 @@
 # -*- encoding: utf-8 -*-
 
+import logging
+from linux import LinuxCommandLine
+
+
+logging.basicConfig(
+    format='%(levelname)s : %(asctime)s : %(message)s',
+    level=logging.DEBUG
+)
+
 
 class VirtualBoxManager(object):
 
-    def createvm(self,vmname,ostype,**kwargs):
+    @staticmethod
+    def _build_command(*args,**kwargs):
+        command_str = "VBoxManage"
+
+        for arg in args:
+            command_str += " {arg}".format(arg=arg)
+
+        for key, value in kwargs.items():
+            if value is None:
+                command_str += " --{key}".format(key=key)
+            else:
+                command_str += " --{key} {value}".format(key=key,value=value)
+                
+        return command_str
+
+    @staticmethod
+    def _send_command(command_str):
+        cmd = LinuxCommandLine()
+        rcode, stdout, stderr = cmd.execute(command_str)
+
+        if rcode == 0:
+            logging.info("Command '%s' successfully executed !!",command_str)
+        else:
+            logging.info("Command '%s' failed with the following error '%s'",
+                command_str,stderr
+            )
+
+        return rcode, stdout, stderr
+
+
+    def createvm(self,name,**kwargs):
         """
         Creates a new virtual machine XML definition file.
         
         Args:
-            vmname (str): the name of the virtual machine.
+            name (str): the name of the virtual machine.
             ostype (str): valid os types are Ubuntu_64
                 and others, use 'VBoxManage list ostypes'
                 command to get a full list of available
@@ -17,15 +56,8 @@ class VirtualBoxManager(object):
                 definition file into Oracle VM VirtualBox.
         """
 
-        command_format = "VBoxManage createvm {vmname} {ostype}".format(
-            vmname=vmname, ostype=ostype
-        )
-
-        for key, value in kwargs.items():
-            command_format += " --{key} {value}".format(key=key,value=value)
-
-        print(command_format)
-
+        command_str = self._build_command('createvm',name=name,**kwargs)
+        rcode, stdout, stderr = self._send_command(command_str)
 
     def modifyvm(self,vmname,**kwargs):
         """
@@ -37,11 +69,8 @@ class VirtualBoxManager(object):
                 use 'VBoxManage modifyvm' command to get a 
                 full list of args supported. 
         """
-        command_format = "VBoxManage modifyvm {vmname}".format(vmname=vmname)
-        for key, value in kwargs.items():
-            command_format += " --{key} {value}".format(key=key,value=value)
-
-        print(command_format)
+        command_str = self._build_command('modifyvm',vmname,**kwargs)
+        rcode, stdout, stderr = self._send_command(command_str)
 
     def storagectl(self,vmname,**kwargs):
         """
@@ -55,11 +84,8 @@ class VirtualBoxManager(object):
             add (str): ide|sata|scsi|floppy|sas|usb|pcie.
         """
 
-        command_format = "VBoxManage storagectl {vmname}".format(vmname=vmname)
-        for key, value in kwargs.items():
-            command_format += " --{key} {value}".format(key=key,value=value)
-
-        print(command_format)
+        command_str = self._build_command('storagectl',vmname,**kwargs)
+        rcode, stdout, stderr = self._send_command(command_str)
 
     def storageattach(self,vmname,**kwargs):
         """
@@ -81,11 +107,8 @@ class VirtualBoxManager(object):
 
         """
 
-        command_format = "VBoxManage storageattach {vmname}".format(vmname=vmname)
-        for key, value in kwargs.items():
-            command_format += " --{key} {value}".format(key=key,value=value)
-
-        print(command_format)
+        command_str = self._build_command('storageattach',vmname,**kwargs)
+        rcode, stdout, stderr = self._send_command(command_str)
 
     def unregistervm(self,vmname,**kwargs):
         """
@@ -106,10 +129,31 @@ class VirtualBoxManager(object):
 
             * The machine directory, if it is empty after having deleted 
             all of the above files.
+
+        Args:
+            vmname (str): the name of the virtual machine.
+        """
+        command_str = self._build_command('unregistervm',vmname,**kwargs)
+        rcode, stdout, stderr = self._send_command(command_str)
+
+    def startvm(self,vmname,**kwargs):
+        """
+        This command starts a virtual machine that is currently in the Powered Off
+        or Saved states.
+
+        Args:
+            vmname (str): the name of the virtual machine.
+            type (str): gui|headless|separate
         """
 
-        command_format = "VBoxManage unregistervm {vmname}".format(vmname=vmname)
-        for key, value in kwargs.items():
-            command_format += " --{key} {value}".format(key=key,value=value)
+        command_str = self._build_command('startvm',vmname,**kwargs)
+        rcode, stdout, stderr = self._send_command(command_str)
 
-        print(command_format)
+
+    def controlvm(self,vmname,action):
+        """
+        The controlvm subcommand enables you to change the state of a 
+        virtual machine that is currently running.
+        """
+        command_str = self._build_command('controlvm',vmname,action)
+        rcode, stdout, stderr = self._send_command(command_str)

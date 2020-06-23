@@ -19,7 +19,13 @@ class LinuxCommandLine(object):
                 "command1 arg1 arg2 ... argN".
         """
 
+        stdout = None
+        stderr = None
+        return_code = None
+
         command_list = command_str.split(' ')
+        # command_list.remove('')
+        print(command_list)
 
         try:
             # Popen use the format ["command1", "arg1", "arg2"]
@@ -44,6 +50,10 @@ class LinuxCommandLine(object):
         except OSError as e:
             # When the command is not well writed subprocess
             # will raise an exception.
+            return_code = None
+            stdout = None 
+            stderr = str(e)
+        except Exception as e:
             return_code = None
             stdout = None 
             stderr = str(e)
