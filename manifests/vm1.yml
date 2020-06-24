@@ -1,0 +1,13 @@
+# Exeecution Enviroment Manifestfile
+
+# Type of execution environment
+type: vmachine
+name: vm1
+cpus: 1
+memory: 512
+# Port forwarding
+ports:
+  - name: rule1
+    type: tcp
+    hostPort: 2224
+    guestPort: 22

@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 """
 Main module
 """
@@ -5,12 +7,15 @@ Main module
 __author__ = 'Aurelio Vivas'
 __version__ = '1.0'
 
+
 from virtualbox import VirtualBoxManager
-from linux import LinuxCommandLine
+from metadata import VirtualMachineDefFile
 
 
 if __name__ == '__main__':
-    vbox = VirtualBoxManager()
+    
+    # VIRTUAL MACHINE CREATION AND DELECTION
+    # vbox = VirtualBoxManager()
     # vbox.createvm(name='vm1',ostype='Ubuntu_64',register=None)
 
     # vbox.modifyvm(
@@ -26,4 +31,8 @@ if __name__ == '__main__':
 
     # vbox.startvm(vmname='vm1',type='headless')
     # vbox.controlvm(vmname='vm1',action='acpipowerbutton')
-    vbox.unregistervm(vmname='vm1',delete=None)
+    # vbox.unregistervm(vmname='vm1',delete=None)
+
+    # VIRTUAL MACHINE METADATA
+    vmdef = VirtualMachineDefFile(file_path='./manifests/vm1.yml')
+    print(vmdef.name,vmdef.cpus,vmdef.memory,vmdef.ports)
