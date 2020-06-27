@@ -9,7 +9,8 @@ __version__ = '1.0'
 
 
 from virtualbox import VirtualBoxManager
-from metadata import VirtualMachineDefFile
+from metadata import DeploymentManifest
+from deployment import VirtualBoxManifestDeployment
 
 
 if __name__ == '__main__':
@@ -34,5 +35,7 @@ if __name__ == '__main__':
     # vbox.unregistervm(vmname='vm1',delete=None)
 
     # VIRTUAL MACHINE METADATA
-    vmdef = VirtualMachineDefFile(file_path='./manifests/vm1.yml')
-    print(vmdef.name,vmdef.cpus,vmdef.memory,vmdef.ports)
+    manifest = DeploymentManifest(file_path='./manifests/vm1.yml')
+    vbox_deployment = VirtualBoxManifestDeployment(manifest)
+    vbox_deployment.run()
+

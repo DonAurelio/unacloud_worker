@@ -25,7 +25,7 @@ class LinuxCommandLine(object):
 
         command_list = command_str.split(' ')
         # command_list.remove('')
-        print(command_list)
+        # print(command_list)
 
         try:
             # Popen use the format ["command1", "arg1", "arg2"]

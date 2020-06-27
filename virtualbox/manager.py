@@ -157,3 +157,19 @@ class VirtualBoxManager(object):
         """
         command_str = self._build_command('controlvm',vmname,action)
         rcode, stdout, stderr = self._send_command(command_str)
+
+    def list_vms(self):
+        """
+        The controlvm subcommand enables you to change the state of a 
+        virtual machine that is currently running.
+        """
+        command_str = self._build_command('list','vms')
+        rcode, stdout, stderr = self._send_command(command_str)
+
+        # Parse the output of 'VBoxManage list vms' command 
+        # and return the names of the registered vms
+        output = stdout.replace('"','')
+        output_lines = output.splitlines()
+        vms = [line.split(' ')[0] for line in output_lines]
+
+        return vms

@@ -4,7 +4,11 @@
 import yaml
 
 
-class VirtualMachineDefFile(object):
+class DeploymentManifest(object):
+    """
+    Resource deployent
+    Action deployment
+    """
    
     @staticmethod
     def _load_from_text(text):
@@ -28,26 +32,37 @@ class VirtualMachineDefFile(object):
             self._data = None
 
     @property
+    def is_resource_deployment(self):
+        return 'specs' in self._data
+
+    @property
+    def is_action_deployment(self):
+        return 'action' in self._data
+
+    @property
     def data(self):
         return self._data
 
     @property
-    def name(self):
-        return self._data.get('name', None)
+    def provider(self):
+        return self._data.get('provider')    
 
     @property
-    def type(self):
-        return self._data.get('cpus', None)
+    def name(self):
+        return self._data.get('name')
 
     @property
     def cpus(self):
-        return self._data.get('cpus', 1)
+        specs = self._data.get('specs')
+        return specs.get('cpus', 1)
 
     @property
     def memory(self):
-        return self._data.get('memory', 512)
+        specs = self._data.get('specs')
+        return specs.get('memory', 512)
 
     @property
     def ports(self):
-        return self._data.get('ports', None)
+        specs = self._data.get('ports')
+        return specs.get('ports', None)
     
