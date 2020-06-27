@@ -8,6 +8,8 @@ Given the deployemt or virtual machine specifications
 from virtualbox.manager import VirtualBoxManager
 
 import logging
+import os
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -23,65 +25,181 @@ logger.addHandler(ch)
 
 class VirtualBoxManifestDeployment(object):
 
-    def __init__(self, obj_manifest):
-        self._manifest = obj_manifest
+    def __init__(self, manifest):
+        self._vbox = VirtualBoxManager()
+        self._mft = manifest
 
-    def run(self):
-        if self._manifest.is_resource_deployment:
-            self.run_deployment()
-        elif self._manifest.is_action_deployment:
-            self.run_action()
+        # Other deployment consiguration
+        self._reserved_ports = []
+
+        # Configurations
+        self._ports_forder_path = './ports'
+        self._port_min_number = 2221
+
+        # Deployment metrics
+
+
+    def _reserve_port(self):
+        """Reserve a port for use in the deployment.
+        The ports that are already in use are stored in 
+        the ports folder.
+
+        Ex: 2221.txt, 2222.txt 
+
+        A new port must be the next in the sequent of used ports.
+        """
+        assigned_ports = os.listdir(self._ports_forder_path)
+        last_port = None
+
+        if assigned_ports:
+            # Sort port numbers
+            assigned_ports.sort()
+            last_port = assigned_ports[-1]
+            # Remove the '.txt' from the file name
+            last_port = int(last_port[:-4]) + 1
         else:
-            raise Exception('No action or resource deployment')
+            last_port = self._port_min_number
 
-    def run_action(self):
-        vbox.controlvm(vmname=self._manifest.name,action='acpipowerbutton')
+        self._reserved_ports.append(last_port)
+        return last_port
 
-    def run_deployment(self):
-        logger.info(
-            "Running '%s' deployment with '%s' provider !!",
-            self._manifest.name,self._manifest.provider
+    def _cleanup_reserved_ports(self):
+        """
+        Release the reserved port
+        """
+        for port_number in self._reserved_ports:
+            port_file_name =  port_number + '.txt'
+            port_file_path = os.path.join(
+                self._ports_forder_path,port_file_name
+            )
+            os.remove(port_file_path)
+
+    def _createvm(self):
+        self._vbox.createvm(
+            name=self._mft.name,
+            ostype='Ubuntu_64',
+            register=None
         )
 
-        vbox = VirtualBoxManager()
+    def _modifyvm(self):
+        ssh_rule_name = 'ssh'
+        ssh_host_port = self._reserve_port()
+        ssh_gest_port = 22
+
+        natpf1 = '"%s,tcp,,%s,,%s"' % (
+            ssh_rule_name,ssh_host_port,ssh_gest_port
+        )
+
+        self._vbox.modifyvm(
+            vmname = self._mft.name,
+            cpus = self._mft.cpus,
+            memory = self._mft.memory,
+            nic1 = 'nat',
+            natpf1 = natpf1
+        )
+
+    def _storagectl(self):
+        self._vbox.storagectl(
+            vmname=self._mft.name,
+            name='sata1',
+            add='sata'
+        )
+
+    def _storageattch(self):
+
+        self._vbox.storageattach(
+            vmname=self._mft.name,
+            storagectl='sata1',
+            port=0,
+            device=0,
+            type='hdd',
+            medium='/home/aureavm/Desktop/prototipo/base.vdi',
+            mtype='multiattach'
+        )
+
+    def _startvm(self):
+        self._vbox.startvm(vmname=self._mft.name,type='headless')
+
+    def _unregistervm(self):
+        if self._vbox.vm_exists(self._mft.name):
+            # Check if the virtual machine was already deployed
+            self._vbox.unregistervm(vmname=self._mft.name,delete=None)
+
+    def _stopvm(self):
+        self._vbox.controlvm(vmname=self._mft.name,action='acpipowerbutton')
+
+    def _resetvm(self):
+        self._vbox.controlvm(vmname=self._mft.name,action='reset')
+
+    def _vm_exists(self):
+        return self._vbox.vm_exists(self._mft.name)
+
+    def _vm_is_runnig(self):
+        pass
+
+    def _run_deployment(self):
+        logger.info(
+            "Running '%s' deployment with '%s' provider !!",
+            self._mft.name,self._mft.provider
+        )
+
         try:
-            vbox.createvm(
-                name=self._manifest.name,
-                ostype='Ubuntu_64',
-                register=None
-            )
+            if not self._vm_exists():
+                self._createvm()
+                self._modifyvm()
+                self._storagectl()
+                self._storageattch()
+                self._startvm()
+            else:
+                message = (
+                    "The Virtual Machine '%s' already exists. "
+                    "so not deployed again !!"
+                )
+                logger.info(message,self._mft.name)
 
-            vbox.modifyvm(
-                vmname = self._manifest.name,
-                cpus = self._manifest.cpus,
-                memory = self._manifest.memory,
-                nic1 = 'nat',
-                natpf1 = '"rule1,tcp,,2224,,22"'
-            )
-
-            vbox.storagectl(
-                vmname=self._manifest.name,
-                name='sata1',
-                add='sata'
-            )
-
-            vbox.storageattach(
-                vmname=self._manifest.name,
-                storagectl='sata1',
-                port=0,
-                device=0,
-                type='hdd',
-                medium='/home/aureavm/Desktop/prototipo/base.vdi',
-                mtype='multiattach'
-            )
-
-            vbox.startvm(vmname=self._manifest.name,type='headless')
         except Exception as e:
-            pass
-            # logger.error(
-            #     "Failed '%s' deployment with '%s' provider: %s",
-            #     self._manifest.name,self._manifest.provider
-            # )
-            # Report error and clean the enviornment
-            # vbox.unregistervm(vmname=self._manifest.name,delete=None)
+            logger.error(
+                "Deployment '%s' with '%s' provider failed !!",
+                self._mft.name,self._mft.provider
+            )
+
+            # If an error occurs during deployment and the machines 
+            # was create we delete the machie as the whole deployment 
+            # must be atomic
+            self._unregistervm()
         
+    def _run_action(self):
+        try:
+            if 'start' in self._mft.action:
+                self._startvm()
+            elif 'stop' in self._mft.action:
+                self._stopvm()
+            elif 'reset'in self._mft.action:
+                self._resetvm()
+            elif 'delete'in self._mft.action:
+                self._unregistervm()
+            else:
+                message = (
+                    "Unkown action received '%s', "
+                    "available actions start|stop|reset." 
+                ) % self._mft.action
+                raise Exception(message)
+        except Exception as e:
+            logger.error(
+                "Action '%s' on machine '%s' with '%s' provider failed !!",
+                self._mft.action,self._mft.name,self._mft.provider
+            )
+
+            logger.exception(e)
+
+    def _dispatch(self):
+        if self._mft.is_resource_deployment:
+            self._run_deployment()
+        elif self._mft.is_action_deployment:
+            self._run_action()
+        else:
+            message = "No 'action' or 'specs' on deployment manifest"
+            raise Exception(message)
+
+    def run(self):
+        self._dispatch()

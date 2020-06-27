@@ -1,11 +1,14 @@
 provider: virtualbox
 name: vm1
-specs:
-  cpus: 1
-  memory: 512
-  # Port forwarding
-  ports:
-    - name: rule1
-      type: tcp
-      hostPort: 2224
-      guestPort: 22
+# actions: start|stop|reset|delete
+action: 'start'
+
+# specs:
+#   cpus: 1
+#   memory: 512
+#   # Port forwarding
+#   ports:
+#     - name: rule1
+#       type: tcp
+#       hostPort: 2224
+#       guestPort: 22

@@ -44,6 +44,10 @@ class DeploymentManifest(object):
         return self._data
 
     @property
+    def action(self):
+        return self._data.get('action')
+
+    @property
     def provider(self):
         return self._data.get('provider')    
 

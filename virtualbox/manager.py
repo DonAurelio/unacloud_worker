@@ -209,3 +209,8 @@ class VirtualBoxManager(object):
         vms = [line.split(' ')[0] for line in output_lines]
 
         return vms
+
+
+    def vm_exists(self,vmname):
+        """Check if the given virtual machine name already exist."""
+        return vmname in self.list_vms()
