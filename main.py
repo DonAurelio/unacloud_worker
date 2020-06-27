@@ -8,7 +8,7 @@ __author__ = 'Aurelio Vivas'
 __version__ = '1.0'
 
 
-from virtualbox import VirtualBoxManager
+from virtualbox.manager import VirtualBoxManager
 from metadata import DeploymentManifest
 from deployment import VirtualBoxManifestDeployment
 

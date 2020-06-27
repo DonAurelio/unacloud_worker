@@ -1,7 +1,10 @@
 # -*- encoding: utf-8 -*-
 
-import logging
+
 from linux import LinuxCommandLine
+from exceptions import VBoxManageException
+
+import logging
 
 
 logging.basicConfig(
@@ -11,6 +14,26 @@ logging.basicConfig(
 
 
 class VirtualBoxManager(object):
+
+
+    @staticmethod
+    def _parse_error_message(message):
+        """
+
+        An error in VBoxManage is reported with the following format.
+        We separet the usefull information and the detailed information.
+        VBoxManage: error: Cannot unregister the machine 'vm1' while it is locked
+        VBoxManage: error: Details: code VBOX_E_INVALID_OBJECT_STATE (0x80bb0007)...
+        VBoxManage: error: Context: "Unregister(CleanupMode_DetachAllReturnHardDisksOnly... 
+        """
+        message_lines = message.splitlines()
+
+        # we extract only the usefull information form the message which is
+        # 'Cannot unregister the machine 'vm1' while it is locked'
+        message_summary = message_lines[0].split(':')[2]
+
+        return message_summary
+
 
     @staticmethod
     def _build_command(*args,**kwargs):
@@ -35,9 +58,8 @@ class VirtualBoxManager(object):
         if rcode == 0:
             logging.info("Command '%s' successfully executed !!",command_str)
         else:
-            logging.info("Command '%s' failed with the following error '%s'",
-                command_str,stderr
-            )
+            message_summary = VirtualBoxManager._parse_error_message(stderr)
+            raise VBoxManageException(command_str,message_summary)
 
         return rcode, stdout, stderr
 

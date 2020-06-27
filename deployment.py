@@ -1,8 +1,9 @@
 # -*- encoding: utf-8 -*-
 
+from virtualbox.manager import VirtualBoxManager
+
 import logging
 
-from virtualbox import VirtualBoxManager
 
 logging.basicConfig(
     format='%(levelname)s : %(asctime)s : %(message)s',
@@ -66,10 +67,10 @@ class VirtualBoxManifestDeployment(object):
 
             vbox.startvm(vmname=self._manifest.name,type='headless')
         except Exception as e:
-            logging.error(
-                "Failed '%s' deployment with '%s' provider: %s",
-                self._manifest.name,self._manifest.provider, str(e)
-            )
+            # logging.error(
+            #     "Failed '%s' deployment with '%s' provider: %s",
+            #     self._manifest.name,self._manifest.provider, str(e)
+            # )
             # Report error and clean the enviornment
             vbox.unregistervm(vmname=self._manifest.name,delete=None)
         
