@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 
-import subprocess 
+import subprocess
+import shutil
+import os
 
 
 class LinuxCommandLine(object):
@@ -59,3 +61,28 @@ class LinuxCommandLine(object):
             stderr = str(e)
         finally:
             return return_code, stdout, stderr
+
+    def create_folder(self,path):
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+    def delete_folder(self,path):
+        if os.path.exists(path):
+            shutil.rmtree(path)
+
+    def create_file(self,file_path,content=''):
+        with open(file_path,'w') as file:
+            file.write(content)
+
+    def delete_file(self,file_path):
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+
+    def content_file(self,file_path):
+        with open(file_path,'r') as file:
+            return file.read()
+
+    def content_dir(self,file_path):
+        return os.listdir(file_path)
+

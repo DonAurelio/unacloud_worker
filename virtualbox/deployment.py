@@ -5,10 +5,14 @@ Defines how a Virtual Machines should be deployed
 Given the deployemt or virtual machine specifications
 """
 
-from virtualbox.manager import VirtualBoxManager
+from manager import VirtualBoxManager
+from exceptions import VBoxManageDepoymentException
+from linux import LinuxCommandLine
+
 
 import logging
 import os
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -28,9 +32,7 @@ class VirtualBoxManifestDeployment(object):
     def __init__(self, manifest):
         self._vbox = VirtualBoxManager()
         self._mft = manifest
-
-        # Other deployment consiguration
-        self._reserved_ports = []
+        self._cmd = LinuxCommandLine()
 
         # Configurations
         self._ports_forder_path = './ports'
@@ -38,6 +40,24 @@ class VirtualBoxManifestDeployment(object):
 
         # Deployment metrics
 
+    def _get_reserved_ports(self):
+        vms_folders = self._cmd.content_dir(self._ports_forder_path)
+        reserved_ports = []
+        for vm_folder in vms_folders:
+            path = os.path.join(self._ports_forder_path,vm_folder)
+            ports = self._cmd.content_dir(path)
+            # Remove the '.txt' from the file name
+            ports = [int(port[:-4]) for port in ports]
+            reserved_ports += ports
+        reserved_ports.sort()
+        return reserved_ports
+
+    def _get_next_available_port(self):
+        reserved = self._get_reserved_ports()
+        if reserved:
+            return reserved[-1] + 1
+        else:
+            return self._port_min_number
 
     def _reserve_port(self):
         """Reserve a port for use in the deployment.
@@ -48,31 +68,40 @@ class VirtualBoxManifestDeployment(object):
 
         A new port must be the next in the sequent of used ports.
         """
+        port_available = self._get_next_available_port()
+        
+
+        # Create VM folder to hold the ports
+        ports_folder = os.path.join(
+            self._ports_forder_path,
+            self._mft.name
+        )
+        self._cmd.create_folder(ports_folder)
+
+        # Create the port file assigned to the machine
+        port_file_name = str(port_available) + '.txt'
+        port_file_path = os.path.join(
+            ports_folder,
+            port_file_name
+        )
+        self._cmd.create_file(port_file_path)
+
+        return port_available
+
         assigned_ports = os.listdir(self._ports_forder_path)
         last_port = None
 
-        if assigned_ports:
-            # Sort port numbers
-            assigned_ports.sort()
-            last_port = assigned_ports[-1]
-            # Remove the '.txt' from the file name
-            last_port = int(last_port[:-4]) + 1
-        else:
-            last_port = self._port_min_number
-
-        self._reserved_ports.append(last_port)
-        return last_port
-
     def _cleanup_reserved_ports(self):
         """
-        Release the reserved port
+        Release the reserved ports for a given 
+        Virtual machine
         """
-        for port_number in self._reserved_ports:
-            port_file_name =  port_number + '.txt'
-            port_file_path = os.path.join(
-                self._ports_forder_path,port_file_name
-            )
-            os.remove(port_file_path)
+        ports_folder = os.path.join(
+            self._ports_forder_path,
+            self._mft.name
+        )
+
+        self._cmd.delete_folder(ports_folder)
 
     def _createvm(self):
         self._vbox.createvm(
@@ -120,10 +149,34 @@ class VirtualBoxManifestDeployment(object):
     def _startvm(self):
         self._vbox.startvm(vmname=self._mft.name,type='headless')
 
-    def _unregistervm(self):
+    def _deletevm(self):
+
         if self._vbox.vm_exists(self._mft.name):
-            # Check if the virtual machine was already deployed
-            self._vbox.unregistervm(vmname=self._mft.name,delete=None)
+            # If the virtual machine is running, turn it off.
+            # Then delete it.
+            if self._vbox.vm_is_running(self._mft.name):
+                self._vbox.controlvm(vmname=self._mft.name,action='poweroff')
+                
+                # While the virtual machine is running, wait
+                # if the maximún wait time is reached
+                # abort and report the error
+                maximun_wait_time = 300
+                while self._vbox.vm_is_running(self._mft.name) and maximun_wait_time > 0:
+                    time.sleep(10)
+                    maximun_wait_time = maximun_wait_time - 10
+
+                if maximun_wait_time < 0:
+                    message = 'maximum delection wait time reached'
+                    raise VBoxManageDepoymentException('deletevm',message)
+
+                # When the virtul machine is off delete it.
+                self._vbox.unregistervm(vmname=self._mft.name,delete=None)
+                self._cleanup_reserved_ports(self)
+
+            # If the virtual machine is not running just delete it.
+            else:
+                self._vbox.unregistervm(vmname=self._mft.name,delete=None)
+                self._cleanup_reserved_ports(self)
 
     def _stopvm(self):
         self._vbox.controlvm(vmname=self._mft.name,action='acpipowerbutton')
@@ -133,9 +186,6 @@ class VirtualBoxManifestDeployment(object):
 
     def _vm_exists(self):
         return self._vbox.vm_exists(self._mft.name)
-
-    def _vm_is_runnig(self):
-        pass
 
     def _run_deployment(self):
         logger.info(
@@ -163,10 +213,15 @@ class VirtualBoxManifestDeployment(object):
                 self._mft.name,self._mft.provider
             )
 
+            logger.exception(e)
+
             # If an error occurs during deployment and the machines 
             # was create we delete the machie as the whole deployment 
             # must be atomic
-            self._unregistervm()
+            logger.info(
+                "Start cleanup deployment !!"
+            )
+            self._deletevm()
         
     def _run_action(self):
         try:
@@ -177,7 +232,7 @@ class VirtualBoxManifestDeployment(object):
             elif 'reset'in self._mft.action:
                 self._resetvm()
             elif 'delete'in self._mft.action:
-                self._unregistervm()
+                self._deletevm()
             else:
                 message = (
                     "Unkown action received '%s', "

@@ -2,7 +2,7 @@
 
 
 from linux import LinuxCommandLine
-from exceptions import VBoxManageException
+from exceptions import VBoxManageCommandException
 
 import logging
 
@@ -42,6 +42,7 @@ class VirtualBoxManager(object):
 
         # we extract only the usefull information form the message which is
         # 'Cannot unregister the machine 'vm1' while it is locked'
+        print('MESAGE',message_lines)
         message_summary = message_lines[0].split(':')[2]
 
         return message_summary
@@ -73,7 +74,7 @@ class VirtualBoxManager(object):
             logger.error("Command '%s' failed !!", command_str)
 
             message_summary = VirtualBoxManager._parse_error_message(stderr)
-            raise VBoxManageException(command_str,message_summary)
+            raise VBoxManageCommandException(command_str,message_summary)
 
         return rcode, stdout, stderr
 
@@ -210,7 +211,25 @@ class VirtualBoxManager(object):
 
         return vms
 
+    def list_runningvms(self):
+        """
+        The controlvm subcommand enables you to change the state of a 
+        virtual machine that is currently running.
+        """
+        command_str = self._build_command('list','runningvms')
+        rcode, stdout, stderr = self._send_command(command_str)
+
+        # Parse the output of 'VBoxManage list vms' command 
+        # and return the names of the registered vms
+        output = stdout.replace('"','')
+        output_lines = output.splitlines()
+        vms = [line.split(' ')[0] for line in output_lines]
+
+        return vms
 
     def vm_exists(self,vmname):
         """Check if the given virtual machine name already exist."""
         return vmname in self.list_vms()
+
+    def vm_is_running(self,vmname):
+        return vmname in self.list_runningvms()
