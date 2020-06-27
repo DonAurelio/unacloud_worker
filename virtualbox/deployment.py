@@ -1,14 +1,24 @@
 # -*- encoding: utf-8 -*-
 
+"""
+Defines how a Virtual Machines should be deployed
+Given the deployemt or virtual machine specifications
+"""
+
 from virtualbox.manager import VirtualBoxManager
 
 import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-logging.basicConfig(
-    format='%(levelname)s : %(asctime)s : %(message)s',
-    level=logging.DEBUG
-)
+formatter = logging.Formatter('%(asctime)s : %(name)s : %(levelname)s : %(message)s')
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
 
 
 class VirtualBoxManifestDeployment(object):
@@ -28,7 +38,7 @@ class VirtualBoxManifestDeployment(object):
         vbox.controlvm(vmname=self._manifest.name,action='acpipowerbutton')
 
     def run_deployment(self):
-        logging.info(
+        logger.info(
             "Running '%s' deployment with '%s' provider !!",
             self._manifest.name,self._manifest.provider
         )
@@ -67,10 +77,11 @@ class VirtualBoxManifestDeployment(object):
 
             vbox.startvm(vmname=self._manifest.name,type='headless')
         except Exception as e:
-            # logging.error(
+            pass
+            # logger.error(
             #     "Failed '%s' deployment with '%s' provider: %s",
-            #     self._manifest.name,self._manifest.provider, str(e)
+            #     self._manifest.name,self._manifest.provider
             # )
             # Report error and clean the enviornment
-            vbox.unregistervm(vmname=self._manifest.name,delete=None)
+            # vbox.unregistervm(vmname=self._manifest.name,delete=None)
         

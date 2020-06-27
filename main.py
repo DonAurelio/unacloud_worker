@@ -9,8 +9,8 @@ __version__ = '1.0'
 
 
 from virtualbox.manager import VirtualBoxManager
+from virtualbox.deployment import VirtualBoxManifestDeployment
 from metadata import DeploymentManifest
-from deployment import VirtualBoxManifestDeployment
 
 
 if __name__ == '__main__':

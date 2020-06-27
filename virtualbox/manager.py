@@ -7,10 +7,16 @@ from exceptions import VBoxManageException
 import logging
 
 
-logging.basicConfig(
-    format='%(levelname)s : %(asctime)s : %(message)s',
-    level=logging.DEBUG
-)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s : %(name)s : %(levelname)s : %(message)s')
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
 
 
 class VirtualBoxManager(object):
@@ -18,13 +24,19 @@ class VirtualBoxManager(object):
 
     @staticmethod
     def _parse_error_message(message):
-        """
+        """Parse VBoxManage Error Messages.
 
         An error in VBoxManage is reported with the following format.
         We separet the usefull information and the detailed information.
         VBoxManage: error: Cannot unregister the machine 'vm1' while it is locked
         VBoxManage: error: Details: code VBOX_E_INVALID_OBJECT_STATE (0x80bb0007)...
         VBoxManage: error: Context: "Unregister(CleanupMode_DetachAllReturnHardDisksOnly... 
+
+        Args:
+            message (str): the stdout of the VBoxManage command.
+
+        Returns:
+            The usefull information of the message.
         """
         message_lines = message.splitlines()
 
@@ -56,8 +68,10 @@ class VirtualBoxManager(object):
         rcode, stdout, stderr = cmd.execute(command_str)
 
         if rcode == 0:
-            logging.info("Command '%s' successfully executed !!",command_str)
+            logger.info("Command '%s' successfully executed !!", command_str)
         else:
+            logger.error("Command '%s' failed !!", command_str)
+
             message_summary = VirtualBoxManager._parse_error_message(stderr)
             raise VBoxManageException(command_str,message_summary)
 
