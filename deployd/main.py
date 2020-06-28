@@ -9,10 +9,10 @@ __author__ = 'Aurelio Vivas'
 __version__ = '1.0'
 
 
-from virtualbox.manager import VirtualBoxManager
-from virtualbox.deployment import VirtualBoxManifestDeployment
-from metadata import DeploymentManifest
-from deployd import Deployd
+# from virtualbox.manager import VirtualBoxManager
+# from virtualbox.deployment import VirtualBoxManifestDeployment
+# from metadata import DeploymentManifest
+# from deployd import Deployd
 
 import requests
 import datetime
@@ -49,15 +49,11 @@ if __name__ == '__main__':
     # deployd.run()
 
     data = {
-        'id':12,
-        'address':'10.0.0.46',
-        'cpus':1,
-        'memory': 512,
-        'last_health_report_date': datetime.datetime.now()
-
+        # 'id':1,
+        'worker':"http://localhost:8081/api/worker/workers/1/",
     }
     # 'https://httpbin.org/post'
-    r = requests.patch('http://localhost:8000/workernodes/', data = data)
+    r = requests.patch('http://localhost:8081/api/environment/environments/1/', data = data)
     print(r.status_code)
     print(r.content)
 
