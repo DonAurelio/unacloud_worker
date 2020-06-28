@@ -233,3 +233,11 @@ class VirtualBoxManager(object):
 
     def vm_is_running(self,vmname):
         return vmname in self.list_runningvms()
+
+
+class VirtualBoxStatusManger(object):
+    """docstring for VirtualBoxStatusManger"""
+    def __init__(self, arg):
+        super(VirtualBoxStatusManger, self).__init__()
+        self.arg = arg
+        

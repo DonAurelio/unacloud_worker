@@ -12,6 +12,10 @@ __version__ = '1.0'
 from virtualbox.manager import VirtualBoxManager
 from virtualbox.deployment import VirtualBoxManifestDeployment
 from metadata import DeploymentManifest
+from deployd import Deployd
+
+import requests
+import datetime
 
 
 if __name__ == '__main__':
@@ -36,7 +40,38 @@ if __name__ == '__main__':
     # vbox.unregistervm(vmname='vm1',delete=None)
 
     # VIRTUAL MACHINE METADATA
-    manifest = DeploymentManifest(file_path='./manifests/vm1.yml')
-    vbox_deployment = VirtualBoxManifestDeployment(manifest)
-    vbox_deployment.run()
+    # manifest = DeploymentManifest(file_path='./manifests/vm1.yml')
+    # vbox_deployment = VirtualBoxManifestDeployment(manifest)
+    # vbox_deployment.run()
 
+    # DEPLOYD
+    # deployd = Deployd(manifests_folder='./manifests')
+    # deployd.run()
+
+    data = {
+        'id':12,
+        'address':'10.0.0.46',
+        'cpus':1,
+        'memory': 512,
+        'last_health_report_date': datetime.datetime.now()
+
+    }
+    # 'https://httpbin.org/post'
+    r = requests.patch('http://localhost:8000/workernodes/', data = data)
+    print(r.status_code)
+    print(r.content)
+
+    # r = requests.get('http://localhost:8000/executionenvironments/?status=Pending')
+    # print(r.status_code)
+    # data = r.json()
+    # print(data)
+    # sorted_nodes = sorted(data, key=lambda k: k['available_cpus']) 
+    # print(sorted_nodes)
+    # r = requests.get('http://localhost:8000/workernodes/')
+    # print(r.status_code)
+    # print(type(r.json()))
+    # print(r.status_code)
+    # data = r.json()
+    # print(data)
+    # sorted_nodes = sorted(data, key=lambda k: k['available_cpus'], reverse=True) 
+    # print(sorted_nodes)
