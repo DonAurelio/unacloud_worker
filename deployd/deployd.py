@@ -80,7 +80,6 @@ def report_deployment_status(manifest,vbox_deployment):
                     "Status of deployed enviroment couldn't "
                     "be updated on the API server"
                 )
-                logger.warning()
                 logger.warning(message)
                 logger.warning("Start enviroment deletion")
                 vbox_deployment.delete()
