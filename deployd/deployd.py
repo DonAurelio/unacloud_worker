@@ -3,78 +3,75 @@
 from metadata import DeploymentManifest
 from virtualbox.deployment import VirtualBoxManifestDeployment
 
+import logging
 import requests
 import time
+import glob
 
 
-class Deployd(object):
-    """docstring for Deployd"""
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-    def __init__(self,api_base_url):
-        self._api_base_url = api_base_url
-        self._worker_id = worker_id
-
-    def _get_worker_id(self):
-
-    def _get_environments(self):
-        endpoint = '/environment/environments/' 
-        query = '?deployment__status=Pending&worker=%s' % self._worker_id
-        url = self._api_base_url + endpoint + query
-        response = requests.get(url)
-
-        # Check if an error has occurred
-        response.raise_for_status()
-        environments = response.json()
-
-        return environments
+formatter = logging.Formatter('%(asctime)s : %(name)s : %(levelname)s : %(message)s')
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
 
 
-    def _parse_environments(self,environments):
-        parsed = []
-        for environment in environments:
-            provider = environment.get('provider')
-            name = environment.get('name')
-            cpus = environment.get('cores')
-            memory = environment.get('memory')
+# Base API url without the ending slash
+API_BASE_URL = 'http://localhost:8081/api'
 
-            data = {
-                'provider': provider,
-                'name': name,
-                'specs': {
-                    'cpus': cpus,
-                    'memory': memory
-                }
-            }
+# Wait time for next iteration (seconds)
+SLEEP_SECONDS = 20
 
-            parsed.append(data)
 
-        return parsed
+def get_manifests():
+    logger.info("Loading manifest directory ...")
+    lookup = './manifests/*.yml'
+    paths = glob.glob(lookup)
+    logger.info("Finded manifests '%s'" % len(paths))
+    return paths
 
-    def _deploy_environment(self,environment):
-        manifest = DeploymentManifest(data=environment)
-        vbox_deployment = VirtualBoxManifestDeployment(manifest)
-        vbox_deployment.run()
 
-    def _deploy_environments(self):
-        environments = self._get_environments()
-        environments = self._parse_environments(environments)
+def deploy_environment(file_path):
+    logger.info("Deploy manifest '%s'" % file_path)
+    manifest = DeploymentManifest(file_path=file_path)
+    vbox_deployment = VirtualBoxManifestDeployment(manifest)
+    vbox_deployment.run()
 
-        for environment in environments:
-            self._deploy_environment(data=environment)
+    # Get enviroment
+    environment_id = manifest.name
+    endpoint = '/environment/environments/{id}/'.format(
+        id=environment_id
+    )
 
-    def start(self):
-        # what for a minute
-        time.sleep(60)
+    url = API_BASE_URL + endpoint
+    response = requests.get(url)
+    response.raise_for_status()
 
-        # (1) Register the node
-        self._register_worker()
+    environment = response.json()
 
-        # (2) Report worker status
-        self._report_worker_status()
+    deployment_ur
 
-        # (2) Request and Deploy environments 
-        self._deploy_environments()
 
-    def run(self):
-        while True:
-            self.start()
+def deploy():
+    logger.info("Deployment ...")
+    manifests_paths = self.get_manifests()
+    for manifest_path in manifests_paths:
+        deploy_environment(file_path)
+    logger.info("End deployment ...")
+
+
+if __name__ == '__main__':
+    logger.info("Deployd started !!")
+    while True:
+        try: 
+            time.sleep(SLEEP_SECONDS)
+            deploy()
+        except requests.exceptions.ConnectionError as e:
+            logger.exception(e)
+        except Exception as e:
+            logger.exception(e)
