@@ -1,0 +1,5 @@
+name: 1
+provider: virtualbox
+specs:
+  cpus: 1
+  memory: 256

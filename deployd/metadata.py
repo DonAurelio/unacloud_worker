@@ -53,7 +53,7 @@ class DeploymentManifest(object):
 
     @property
     def name(self):
-        return self._data.get('name')
+        return str(self._data.get('name'))
 
     @property
     def cpus(self):

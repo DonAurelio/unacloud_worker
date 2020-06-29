@@ -19,6 +19,9 @@ import datetime
 
 
 if __name__ == '__main__':
+    pass
+
+    # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
     
     # VIRTUAL MACHINE CREATION AND DELECTION
     # vbox = VirtualBoxManager()
@@ -48,14 +51,14 @@ if __name__ == '__main__':
     # deployd = Deployd(manifests_folder='./manifests')
     # deployd.run()
 
-    data = {
-        # 'id':1,
-        'worker':"http://localhost:8081/api/worker/workers/1/",
-    }
-    # 'https://httpbin.org/post'
-    r = requests.patch('http://localhost:8081/api/environment/environments/1/', data = data)
-    print(r.status_code)
-    print(r.content)
+    # data = {
+    #     # 'id':1,
+    #     'worker':"http://localhost:8081/api/worker/workers/1/",
+    # }
+    # # 'https://httpbin.org/post'
+    # r = requests.patch('http://localhost:8081/api/environment/environments/1/', data = data)
+    # print(r.status_code)
+    # print(r.content)
 
     # r = requests.get('http://localhost:8000/executionenvironments/?status=Pending')
     # print(r.status_code)

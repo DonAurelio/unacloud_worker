@@ -7,6 +7,7 @@ import logging
 import requests
 import time
 import glob
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -21,16 +22,22 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
+# Absolute path to the deployd directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Path to the resources directory holding .vdi template disc.
+MANIFESTS_PATH = os.path.join(BASE_DIR,'manifests')
+
 # Base API url without the ending slash
-API_BASE_URL = 'http://localhost:8081/api'
+API_BASE_URL = 'http://localhost:8082/api'
 
 # Wait time for next iteration (seconds)
-SLEEP_SECONDS = 20
+SLEEP_SECONDS = 5
 
 
 def get_manifests():
-    logger.info("Loading manifest directory ...")
-    lookup = './manifests/*.yml'
+    logger.info("Loading manifests from '%s' directory ...", MANIFESTS_PATH)
+    lookup = os.path.join(MANIFESTS_PATH,'*.yml')
     paths = glob.glob(lookup)
     logger.info("Finded manifests '%s'" % len(paths))
     return paths
@@ -41,27 +48,26 @@ def deploy_environment(file_path):
     manifest = DeploymentManifest(file_path=file_path)
     vbox_deployment = VirtualBoxManifestDeployment(manifest)
     vbox_deployment.run()
+    logger.info("End manifest '%s' deployment" % file_path)
 
     # Get enviroment
-    environment_id = manifest.name
-    endpoint = '/environment/environments/{id}/'.format(
-        id=environment_id
-    )
+    # environment_id = manifest.name
+    # endpoint = '/environment/environments/{id}/'.format(
+    #     id=environment_id
+    # )
 
-    url = API_BASE_URL + endpoint
-    response = requests.get(url)
-    response.raise_for_status()
+    # url = API_BASE_URL + endpoint
+    # response = requests.get(url)
+    # response.raise_for_status()
 
-    environment = response.json()
-
-    deployment_ur
+    # environment = response.json()
 
 
 def deploy():
     logger.info("Deployment ...")
-    manifests_paths = self.get_manifests()
+    manifests_paths = get_manifests()
     for manifest_path in manifests_paths:
-        deploy_environment(file_path)
+        deploy_environment(manifest_path)
     logger.info("End deployment ...")
 
 

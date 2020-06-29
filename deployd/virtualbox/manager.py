@@ -42,7 +42,6 @@ class VirtualBoxManager(object):
 
         # we extract only the usefull information form the message which is
         # 'Cannot unregister the machine 'vm1' while it is locked'
-        print('MESAGE',message_lines)
         message_summary = message_lines[0].split(':')[2]
 
         return message_summary
@@ -78,6 +77,10 @@ class VirtualBoxManager(object):
 
         return rcode, stdout, stderr
 
+    @staticmethod
+    def _validate_vmname(vmname):
+        assert isinstance(vmname,str), "Virtual Machine name must be string but got '%'" % type(vmname)
+
 
     def createvm(self,name,**kwargs):
         """
@@ -92,7 +95,7 @@ class VirtualBoxManager(object):
             register (bool): registers a XML virtual machine 
                 definition file into Oracle VM VirtualBox.
         """
-
+        self._validate_vmname(name)
         command_str = self._build_command('createvm',name=name,**kwargs)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -106,6 +109,7 @@ class VirtualBoxManager(object):
                 use 'VBoxManage modifyvm' command to get a 
                 full list of args supported. 
         """
+        self._validate_vmname(vmname)
         command_str = self._build_command('modifyvm',vmname,**kwargs)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -120,7 +124,7 @@ class VirtualBoxManager(object):
             name (str): the name of the virtual machine.
             add (str): ide|sata|scsi|floppy|sas|usb|pcie.
         """
-
+        self._validate_vmname(vmname)
         command_str = self._build_command('storagectl',vmname,**kwargs)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -143,7 +147,7 @@ class VirtualBoxManager(object):
                 |shareable|readonly|multiattach.
 
         """
-
+        self._validate_vmname(vmname)
         command_str = self._build_command('storageattach',vmname,**kwargs)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -170,6 +174,7 @@ class VirtualBoxManager(object):
         Args:
             vmname (str): the name of the virtual machine.
         """
+        self._validate_vmname(vmname)
         command_str = self._build_command('unregistervm',vmname,**kwargs)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -182,7 +187,7 @@ class VirtualBoxManager(object):
             vmname (str): the name of the virtual machine.
             type (str): gui|headless|separate
         """
-
+        self._validate_vmname(vmname)
         command_str = self._build_command('startvm',vmname,**kwargs)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -192,6 +197,7 @@ class VirtualBoxManager(object):
         The controlvm subcommand enables you to change the state of a 
         virtual machine that is currently running.
         """
+        self._validate_vmname(vmname)
         command_str = self._build_command('controlvm',vmname,action)
         rcode, stdout, stderr = self._send_command(command_str)
 
@@ -229,9 +235,11 @@ class VirtualBoxManager(object):
 
     def vm_exists(self,vmname):
         """Check if the given virtual machine name already exist."""
+        self._validate_vmname(vmname)
         return vmname in self.list_vms()
 
     def vm_is_running(self,vmname):
+        self._validate_vmname(vmname)
         return vmname in self.list_runningvms()
 
 

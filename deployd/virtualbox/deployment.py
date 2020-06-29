@@ -27,6 +27,13 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
+# Absolute path to the 'deployd' directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Path to the resources directory holding .vdi template disc.
+RESOURCES_PATH = os.path.join(BASE_DIR,'resources')
+
+
 class VirtualBoxManifestDeployment(object):
 
     def __init__(self, manifest):
@@ -136,13 +143,16 @@ class VirtualBoxManifestDeployment(object):
 
     def _storageattch(self):
 
+        # Template disk
+        medium = os.path.join(RESOURCES_PATH,'base.vdi')
+
         self._vbox.storageattach(
             vmname=self._mft.name,
             storagectl='sata1',
             port=0,
             device=0,
             type='hdd',
-            medium='/home/aureavm/Desktop/prototipo/base.vdi',
+            medium=medium,
             mtype='multiattach'
         )
 
@@ -150,13 +160,15 @@ class VirtualBoxManifestDeployment(object):
         self._vbox.startvm(vmname=self._mft.name,type='headless')
 
     def _deletevm(self):
-
+        logger.info("Start '%s' virtual machine delection",self._mft.name)
         if self._vbox.vm_exists(self._mft.name):
             # If the virtual machine is running, turn it off.
             # Then delete it.
             if self._vbox.vm_is_running(self._mft.name):
+                logger.info("Poweroff '%s' virtual machine",self._mft.name)
                 self._vbox.controlvm(vmname=self._mft.name,action='poweroff')
                 
+                logger.info("Wait until '%s' virtual machine is off",self._mft.name)
                 # While the virtual machine is running, wait
                 # if the maximún wait time is reached
                 # abort and report the error
@@ -169,14 +181,16 @@ class VirtualBoxManifestDeployment(object):
                     message = 'maximum delection wait time reached'
                     raise VBoxManageDepoymentException('deletevm',message)
 
+                logger.info("Unregister and delete '%s' virtual machine",self._mft.name)
                 # When the virtul machine is off delete it.
                 self._vbox.unregistervm(vmname=self._mft.name,delete=None)
-                self._cleanup_reserved_ports(self)
+                self._cleanup_reserved_ports()
 
             # If the virtual machine is not running just delete it.
             else:
+                logger.info("Unregister and delete '%s' virtual machine",self._mft.name)
                 self._vbox.unregistervm(vmname=self._mft.name,delete=None)
-                self._cleanup_reserved_ports(self)
+                self._cleanup_reserved_ports()
 
     def _stopvm(self):
         self._vbox.controlvm(vmname=self._mft.name,action='acpipowerbutton')
