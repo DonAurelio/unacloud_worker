@@ -47,6 +47,10 @@ class DeploymentManifest(object):
         return 'action' in self._data
 
     @property
+    def action_id(self):
+        return self._data.get('action_id')
+
+    @property
     def data(self):
         return self._data
 

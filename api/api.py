@@ -54,6 +54,30 @@ class Environment(Resource):
         }
         return response,200
 
+@api.route('/actions/')
+class Action(Resource):
+    def post(self):
+        action_data = request.get_json()
+        action_id = action_data.get('action_id')
+        environment_id = action_data.get('environment_id')
+        provider = action_data.get('provider')
+        action = action_data.get('action')
+
+        data = {
+            'name': environment_id,
+            'provider': provider,
+            'action': action,
+            'action_id': action_id
+        }
+
+        file_path = '../deployd/manifests/%s.yml' % environment_id
+        with open(file_path, 'w') as outfile:
+            yaml.dump(data, outfile, default_flow_style=False)
+
+        response = {
+            'message': 'Action was stored sucessfully !!'
+        }
+        return response,200
 
 @api.route('/environment/deployment/status_update/')
 class Deployment(Resource):
@@ -75,6 +99,38 @@ class Deployment(Resource):
         response = {
             'status_updated': True,
             'message': 'Deployment status successfully updated in the API SERVER'
+        }
+
+        # except Exception as e:
+        #     logger.exception(e)
+        #     response = {
+        #         'status_updated': False,
+        #         'message': str(e)
+        #     }
+            
+        return response,200
+
+
+@api.route('/environment/action/status_update/')
+class ActionDeployment(Resource):
+    def post(self):
+        """
+        Forwards the data received by the deployd to the 
+        API SERVER. The data is related with the deployment 
+        status of an environment.
+        """
+
+        # try:
+        data = request.get_json()
+        endpoint = '/environment/action/status_update/'
+        url = API_SERVER_BASE_URL + endpoint
+
+        response = requests.post(url,json=data)
+        response.raise_for_status()
+
+        response = {
+            'status_updated': True,
+            'message': 'Action status successfully updated in the API SERVER'
         }
 
         # except Exception as e:

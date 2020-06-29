@@ -70,28 +70,6 @@ def report_deployment_status(manifest,vbox_deployment):
             response = requests.post(url,json=data)
             response.raise_for_status()
 
-            # Check if status was updated
-            # data = response.json()
-            # status_updated = data.get('status_updated')
-            # message = data.get('message')
-
-            # if not status_updated:
-            #     message = (
-            #         "Status of deployed enviroment couldn't "
-            #         "be updated on the API server"
-            #     )
-            #     logger.warning(message)
-            #     logger.warning("Start enviroment deletion")
-            #     vbox_deployment.delete()
-            #     delete_manifest(manifest)
-            # else:
-            #     message = (
-            #         "Status enviroment deployment status was updated " 
-            #         "successfully on the API server"
-            #     )
-            #     logger.info(message)
-
-
         except requests.exceptions.ConnectionError as e:
             message = (
                 "Can't report enviroment '%s' success deployment "
@@ -132,6 +110,63 @@ def report_deployment_status(manifest,vbox_deployment):
             logger.error(message)
             logger.error(e)
 
+def report_action_status(manifest,vbox_deployment):
+    if vbox_deployment.is_action_success():
+        # vm_data, statistics = vbox_deployment.get_deployment_data()
+
+        try:
+            data = {
+                'action_is_success': True,
+                'action_id': manifest.action_id,
+            }
+
+            # report to worker api 
+            endpoint = '/environment/action/status_update/'
+            url = API_BASE_URL + endpoint
+            response = requests.post(url,json=data)
+            response.raise_for_status()
+
+        except requests.exceptions.ConnectionError as e:
+            message = (
+                "Can't report enviroment '%s' success action "
+                "status to API SERVER"
+            ) % vm_data.get('name')
+
+            logger.error(message)
+            logger.error(e)
+            delete_manifest(manifest)
+        except Exception as e:
+            logger.error(e)
+            delete_manifest(manifest)
+            
+
+    else:
+        message = vbox_deployment.get_action_message()
+        data = {
+            'action_is_success': False,
+            'action_id': manifest.action_id,
+            'message': message
+        }
+
+        try:
+            endpoint = '/environment/action/status_update/'
+            url = API_BASE_URL + endpoint
+            response = requests.post(url,json=data)
+            response.raise_for_status()
+        except requests.exceptions.ConnectionError as e:
+            message = (
+                "Can't repot enviroment '%s' failed action "
+                "status to API SERVER"
+            ) % manifest.name
+            logger.error(message)
+            logger.error(e)
+
+def report_status(manifest,vbox_deployment):
+    if vbox_deployment.is_deployment:
+        report_deployment_status(manifest,vbox_deployment)
+    else:
+        report_action_status(manifest,vbox_deployment)
+
 def delete_manifest(manifest):
     file_path = manifest.file_path
     if  os.path.exists(file_path):
@@ -142,7 +177,7 @@ def deploy_environment(file_path):
     manifest = DeploymentManifest(file_path=file_path)
     vbox_deployment = VirtualBoxManifestDeployment(manifest)
     vbox_deployment.run()
-    report_deployment_status(manifest,vbox_deployment)
+    report_status(manifest,vbox_deployment)
     delete_manifest(manifest)
 
 def deploy():

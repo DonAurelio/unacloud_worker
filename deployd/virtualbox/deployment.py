@@ -56,6 +56,9 @@ class VirtualBoxManifestDeployment(object):
         self._deployment_exception = None
         self._action_exception = None
 
+        self.is_deployment = False
+        self.is_action = False
+
     def _get_reserved_ports(self):
         vms_folders = self._cmd.content_dir(self._ports_forder_path)
         reserved_ports = []
@@ -206,6 +209,7 @@ class VirtualBoxManifestDeployment(object):
 
     def _stopvm(self):
         self._vbox.controlvm(vmname=self._mft.name,action='acpipowerbutton')
+        # self._vbox.controlvm(vmname=self._mft.name,action='poweroff')
 
     def _resetvm(self):
         self._vbox.controlvm(vmname=self._mft.name,action='reset')
@@ -214,6 +218,7 @@ class VirtualBoxManifestDeployment(object):
         return self._vbox.vm_exists(self._mft.name)
 
     def _run_deployment(self):
+        self.is_deployment = True
         logger.info(
             "Running '%s' deployment with '%s' provider !!",
             self._mft.name,self._mft.provider
@@ -251,6 +256,7 @@ class VirtualBoxManifestDeployment(object):
             self._deletevm()
         
     def _run_action(self):
+        self.is_action = True
         try:
             if 'start' in self._mft.action:
                 self._startvm()
@@ -273,6 +279,7 @@ class VirtualBoxManifestDeployment(object):
             )
 
             logger.exception(e)
+            self._action_exception = e
 
     def _dispatch(self):
         if self._mft.is_resource_deployment:
@@ -294,8 +301,14 @@ class VirtualBoxManifestDeployment(object):
         """If no execption take place the deployment was succesfull."""
         return self._deployment_exception is None
 
+    def is_action_success(self):
+        return self._action_exception is None
+
     def get_deployment_message(self):
         return str(self._deployment_exception)
+
+    def get_action_message(self):
+        return str(self._action_exception)
 
     def get_deployment_data(self):
         """Return staticts of the deplayment and also virtual machine data."""
