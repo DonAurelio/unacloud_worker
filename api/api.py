@@ -5,13 +5,26 @@ from flask_restplus import Resource
 
 import yaml
 import requests
+import logging
+
 
 app = Flask(__name__)
 api = Api(app)
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s : %(name)s : %(levelname)s : %(message)s')
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
+
 # Base API url without the ending slash
-API_SERVER_BASE_URL = 'http://localhost:8081'
+API_SERVER_BASE_URL = 'http://localhost:8081/api'
 
 
 @api.route('/environments/')
@@ -42,7 +55,7 @@ class Environment(Resource):
         return response,200
 
 
-@api.route('/environments/deployment/status_updates/')
+@api.route('/environment/deployment/status_update/')
 class Deployment(Resource):
     def post(self):
         """
@@ -51,24 +64,25 @@ class Deployment(Resource):
         status of an environment.
         """
 
-        try:
-            data = request.get_json()
-            endpoint = '/deployment/status_updates/'
-            url = API_SERVER_BASE_URL + endpoint
+        # try:
+        data = request.get_json()
+        endpoint = '/environment/deployment/status_update/'
+        url = API_SERVER_BASE_URL + endpoint
 
-            response = requests.post(url)
-            response.raise_for_status()
+        response = requests.post(url,json=data)
+        response.raise_for_status()
 
-            response = {
-                'status_updated': True,
-                'message': 'Deployment status successfully updated in the API SERVER'
-            }
+        response = {
+            'status_updated': True,
+            'message': 'Deployment status successfully updated in the API SERVER'
+        }
 
-        except Exception as e:
-            response = {
-                'status_updated': False,
-                'message': str(e)
-            }
+        # except Exception as e:
+        #     logger.exception(e)
+        #     response = {
+        #         'status_updated': False,
+        #         'message': str(e)
+        #     }
             
         return response,200
 

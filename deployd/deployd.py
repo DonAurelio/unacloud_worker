@@ -10,7 +10,7 @@ import glob
 import os
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('deployd')
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(asctime)s : %(name)s : %(levelname)s : %(message)s')
@@ -64,32 +64,32 @@ def report_deployment_status(manifest,vbox_deployment):
                 'statistics': statistics
             }
 
-            endpoint = '/environments/deployment/status_updates/'
+            # report to worker api 
+            endpoint = '/environment/deployment/status_update/'
             url = API_BASE_URL + endpoint
             response = requests.post(url,json=data)
             response.raise_for_status()
 
             # Check if status was updated
+            # data = response.json()
+            # status_updated = data.get('status_updated')
+            # message = data.get('message')
 
-            data = response.json()
-            status_updated = data.get('status_updated')
-            message = data.get('message')
-
-            if not status_updated:
-                message = (
-                    "Status of deployed enviroment couldn't "
-                    "be updated on the API server"
-                )
-                logger.warning(message)
-                logger.warning("Start enviroment deletion")
-                vbox_deployment.delete()
-                delete_manifest(manifest)
-            else:
-                message = (
-                    "Status enviroment deployment status was updated " 
-                    "successfully on the API server"
-                )
-                logger.info(message)
+            # if not status_updated:
+            #     message = (
+            #         "Status of deployed enviroment couldn't "
+            #         "be updated on the API server"
+            #     )
+            #     logger.warning(message)
+            #     logger.warning("Start enviroment deletion")
+            #     vbox_deployment.delete()
+            #     delete_manifest(manifest)
+            # else:
+            #     message = (
+            #         "Status enviroment deployment status was updated " 
+            #         "successfully on the API server"
+            #     )
+            #     logger.info(message)
 
 
         except requests.exceptions.ConnectionError as e:
@@ -100,20 +100,27 @@ def report_deployment_status(manifest,vbox_deployment):
 
             logger.error(message)
             logger.error(e)
-        except Exception as e:
             vbox_deployment.delete()
             delete_manifest(manifest)
+        except Exception as e:
             logger.error(e)
+            vbox_deployment.delete()
+            delete_manifest(manifest)
+            
 
     else:
         message = vbox_deployment.get_deployment_message()
         data = {
             'deployment_is_success': False,
-            'message': message
+            'message': message,
+            'environment': {
+                'id': manifest.name,
+                'name': manifest.name
+            }
         }
 
         try:
-            endpoint = '/environments/status_updates/'
+            endpoint = '/environment/deployment/status_updates/'
             url = API_BASE_URL + endpoint
             response = requests.post(url,json=data)
             response.raise_for_status()
