@@ -24,12 +24,19 @@ class DeploymentManifest(object):
     def __init__(self,raw_text=None,file_path=None, data=None):
         if raw_text:
             self._data = self._load_from_text(raw_text)
+            self._file_path = ''
         elif file_path:
             self._data = self._load_from_file(file_path)
+            self._file_path = file_path
         elif data:
             self._data = data
+            self._file_path = ''
         else:
             self._data = None
+
+    @property
+    def file_path(self):
+        return self._file_path
 
     @property
     def is_resource_deployment(self):

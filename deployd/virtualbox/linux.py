@@ -3,6 +3,7 @@
 import subprocess
 import shutil
 import os
+import socket
 
 
 class LinuxCommandLine(object):
@@ -85,4 +86,16 @@ class LinuxCommandLine(object):
 
     def content_dir(self,file_path):
         return os.listdir(file_path)
+
+    def get_host_ip_address(self):
+        """
+        Get the IPAddress of the network device with access to internet.
+        """
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        host_ip = s.getsockname()[0]
+        s.close()
+        return host_ip
+
+
 

@@ -28,13 +28,22 @@ Holds the ports allocated for each virtual machine. An example of the content of
 
 ```sh
 vm1/
-	2221.txt
-	2222.txt
+    2221.txt
+    2222.txt
 vm2/
-	2224.txt
+    2224.txt
 ...
 ```
 
 ### resources
 
-Holds the .vdi templates used to deploy virtual machines.
+Holds the .vdi templates used to deploy virtual machines. An example of the content of this folder is shown bellow.
+
+```sh
+base.vdi
+...
+```
+
+### virtualbox 
+
+Holds Python interfaces to interact with the VirtualBox hypervisor. Additionally, holds automated deployment interfaces for virtual machines.

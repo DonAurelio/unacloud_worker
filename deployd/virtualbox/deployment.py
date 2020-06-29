@@ -33,6 +33,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Path to the resources directory holding .vdi template disc.
 RESOURCES_PATH = os.path.join(BASE_DIR,'resources')
 
+# Path to the resources directory holding .vdi template disc.
+PORTS_PATH = os.path.join(BASE_DIR,'ports')
+
 
 class VirtualBoxManifestDeployment(object):
 
@@ -42,10 +45,16 @@ class VirtualBoxManifestDeployment(object):
         self._cmd = LinuxCommandLine()
 
         # Configurations
-        self._ports_forder_path = './ports'
+        self._ports_forder_path = PORTS_PATH
         self._port_min_number = 2221
+        
 
-        # Deployment metrics
+        self._vm_ip_address = None
+        self._vm_ssh_port = None
+
+        # Holding exceptions
+        self._deployment_exception = None
+        self._action_exception = None
 
     def _get_reserved_ports(self):
         vms_folders = self._cmd.content_dir(self._ports_forder_path)
@@ -133,6 +142,9 @@ class VirtualBoxManifestDeployment(object):
             nic1 = 'nat',
             natpf1 = natpf1
         )
+
+        self._vm_ip_address = self._cmd.get_host_ip_address()
+        self._vm_ssh_port = ssh_host_port
 
     def _storagectl(self):
         self._vbox.storagectl(
@@ -228,6 +240,7 @@ class VirtualBoxManifestDeployment(object):
             )
 
             logger.exception(e)
+            self._deployment_exception = e
 
             # If an error occurs during deployment and the machines 
             # was create we delete the machie as the whole deployment 
@@ -272,3 +285,24 @@ class VirtualBoxManifestDeployment(object):
 
     def run(self):
         self._dispatch()
+
+    def delete(self):
+        """Delete virtual machine"""
+        self._deletevm()
+
+    def is_success(self):
+        """If no execption take place the deployment was succesfull."""
+        return self._deployment_exception is None
+
+    def get_deployment_message(self):
+        return str(self._deployment_exception)
+
+    def get_deployment_data(self):
+        """Return staticts of the deplayment and also virtual machine data."""
+        vm = {
+            'name': self._mft.name,
+            'address': self._vm_ip_address,
+            'ssh_port': self._vm_ssh_port
+        }
+        statistics = None
+        return vm, statistics
