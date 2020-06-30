@@ -1,3 +1,5 @@
+#!.env/bin/python
+
 from flask import Flask
 from flask import request
 from flask_restplus import Api
