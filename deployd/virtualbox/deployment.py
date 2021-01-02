@@ -5,9 +5,9 @@ Defines how a Virtual Machines should be deployed
 Given the deployemt or virtual machine specifications
 """
 
-from manager import VirtualBoxManager
-from exceptions import VBoxManageDepoymentException
-from linux import LinuxCommandLine
+from virtualbox.manager import VirtualBoxManager
+from virtualbox.exceptions import VBoxManageDepoymentException
+from virtualbox.linux import LinuxCommandLine
 
 
 import logging
